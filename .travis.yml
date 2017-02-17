@@ -1,0 +1,19 @@
+
+language: c
+ 
+dist: trusty
+sudo: required
+
+compiler:
+  - gcc
+
+before_install:
+    - export TZ=Asia/Taipei
+
+script:
+  - cd examples
+  - gcc -Wall -o test test.c ../src/ini_parser.c ../src/internal/ini.c
+  - ./test
+
+notifications:
+  email: false
