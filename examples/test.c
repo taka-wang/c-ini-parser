@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../src/ini_parser.h"
+#include "iniparser.h"
 
 int main()
 {

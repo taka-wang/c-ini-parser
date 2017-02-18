@@ -11,9 +11,12 @@ before_install:
     - export TZ=Asia/Taipei
 
 script:
-  - cd examples
-  - gcc -std=c99 -Wall -o test test.c ../src/ini_parser.c ../src/internal/ini.c
-  - ./test
+  #- cd examples
+  #- gcc -std=c99 -Wall -o test test.c ../src/iniparser.c ../src/internal/ini.c -I../src
+  #- ./test
+  - mkdir build && cd build
+  - cmake .. && make && sudo make install
+  - cd examples && ./mytest
 
 notifications:
   email: false

@@ -4,7 +4,7 @@
 [![GitHub license](https://img.shields.io/badge/license-BSD-blue.svg)](https://raw.githubusercontent.com/taka-wang/c-ini-parser/master/LICENSE)
 
 An simple INI parser based on [inih](https://github.com/benhoyt/inih) in C.
-You only need to include the ini_parser.h header and link with ini.c and ini_parser.c
+You only need to include the iniparser.h header and link with ini.c and iniparser.c
 
 ## Class Diagram
 
@@ -39,10 +39,19 @@ bool IniParser_GetBoolean(IniParser_T P, const char* const section, const char* 
 
 ## Example
 
-Build from example folder (link ini_parser.c and ini.c)
+Build from example folder (link iniparser.c and ini.c)
 
 ```bash
-gcc -std=c99 -Wall -o test test.c ../src/ini_parser.c ../src/internal/ini.c
+gcc -std=c99 -Wall -o test test.c ../src/iniparser.c ../src/internal/ini.c -I../src
+```
+
+Build from CMake
+
+```bash
+mkdir build && cd build
+cmake .. [-DENABLE_EXAMPLE=TRUE -DENABLE_SHAREDLIB=FALSE]
+make 
+make install
 ```
 
 
@@ -70,7 +79,7 @@ Sample Code
 #include <stdlib.h>
 #include <string.h>
 
-#include "../src/ini_parser.h"
+#include "../src/iniparser.h"
 
 int main()
 {
@@ -101,11 +110,6 @@ int main()
 
 - [inih](https://github.com/benhoyt/inih): Simple .INI file parser in C
 - [uthash](https://github.com/troydhanson/uthash): C macros for hash tables
-
-## TODO
-
-- CMake
-- Unit Test
 
 ## License
 

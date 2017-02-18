@@ -16,10 +16,10 @@ void IniParser_Destroy ( IniParser_T P );
 int IniParser_CheckError ( IniParser_T P );
 
 // Get a string value from INI file, returning default_value if not found.
-const char* const IniParser_Get ( IniParser_T P, 
-                                  const char* const section, 
-                                  const char* const name, 
-                                  const char* const default_value );
+const char* IniParser_Get ( IniParser_T P, 
+                            const char* const section, 
+                            const char* const name, 
+                            const char* const default_value );
 
 // Get an integer (long) value from INI file, returning default_value if
 // not found or not a valid integer (decimal "1234", "-1234", or hex "0x4d2").

@@ -1,4 +1,4 @@
-#include "ini_parser.h"
+#include "iniparser.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -114,9 +114,9 @@ int IniParser_CheckError(T P)
     return P->error;
 }
 
-const char* const IniParser_Get(T P, const char* const section, 
-                                     const char* const name, 
-                                     const char* const default_value)
+const char* IniParser_Get(T P, const char* const section, 
+                               const char* const name, 
+                               const char* const default_value)
 {
     assert(P);
     char key[MAX_KEY_LEN];
@@ -156,29 +156,28 @@ typedef struct pair_s
     bool val_b;
 } pair_t;
 
+// table-driven string comparison
+static pair_t content_types[] = {
+    // true conditions
+    { "true" , true  },
+    { "yes"  , true  },
+    { "on"   , true  },
+    { "1"    , true  },
+    // false conditions
+    { "false", false },
+    { "no"   , false },
+    { "off"  , false },
+    { "0"    , false },
+    // terminator
+    { ""     , false }, // terminator
+};
+
 bool IniParser_GetBoolean(T P, const char* const section, 
                                const char* const name, 
                                const bool default_value)
 {
     assert(P);
     const char* val_str = IniParser_Get(P, section, name, "");
-
-    // table-driven string comparison
-    static pair_t content_types[] = {
-        // true conditions
-        { "true" , true  },
-        { "yes"  , true  },
-        { "on"   , true  },
-        { "1"    , true  },
-        // false conditions
-        { "false", false },
-        { "no"   , false },
-        { "off"  , false },
-        { "0"    , false },
-        // terminator
-        { ""     , false }, // terminator
-    };
-
     for (int i = 0; *content_types[i].value != '\0'; i++) {
         if (strcasecmp(val_str, content_types[i].value) == 0)
             return content_types[i].val_b;
