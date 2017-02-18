@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>        // strcasecmp
 #include <assert.h>
 
 #include "internal/ini.h"
@@ -147,6 +148,14 @@ double IniParser_GetDouble(T P, const char* const section,
     return end > val_str ? val_d : default_value;
 }
 
+
+// bool pais structure
+typedef struct pair_s 
+{
+    const char *value;
+    bool val_b;
+} pair_t;
+
 bool IniParser_GetBoolean(T P, const char* const section, 
                                const char* const name, 
                                const bool default_value)
@@ -154,22 +163,25 @@ bool IniParser_GetBoolean(T P, const char* const section,
     assert(P);
     const char* val_str = IniParser_Get(P, section, name, "");
 
-    if (!strcasecmp(val_str, "true") || 
-        !strcasecmp(val_str, "yes")  || 
-        !strcasecmp(val_str, "on")   || 
-        !strcasecmp(val_str, "1")     )
-    {
-        return true;
-    } 
-    else if (!strcasecmp(val_str, "false") || 
-             !strcasecmp(val_str, "no")    || 
-             !strcasecmp(val_str, "off")   || 
-             !strcasecmp(val_str, "0")      )
-    {
-        return false;
+    // table-driven string comparison
+    static pair_t content_types[] = {
+        // true conditions
+        { "true" , true  },
+        { "yes"  , true  },
+        { "on"   , true  },
+        { "1"    , true  },
+        // false conditions
+        { "false", false },
+        { "no"   , false },
+        { "off"  , false },
+        { "0"    , false },
+        // terminator
+        { ""     , false }, // terminator
+    };
+
+    for (int i = 0; *content_types[i].value != '\0'; i++) {
+        if (strcasecmp(val_str, content_types[i].value) == 0)
+            return content_types[i].val_b;
     }
-    else
-    {
-        return default_value;
-    }
+    return default_value;
 }

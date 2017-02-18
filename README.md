@@ -42,7 +42,7 @@ bool IniParser_GetBoolean(IniParser_T P, const char* const section, const char* 
 Build from example folder (link ini_parser.c and ini.c)
 
 ```bash
-gcc -Wall -o test test.c ../src/ini_parser.c ../src/internal/ini.c
+gcc -std=c99 -Wall -o test test.c ../src/ini_parser.c ../src/internal/ini.c
 ```
 
 
@@ -102,7 +102,12 @@ int main()
 - [inih](https://github.com/benhoyt/inih): Simple .INI file parser in C
 - [uthash](https://github.com/troydhanson/uthash): C macros for hash tables
 
-## LICENSE
+## TODO
+
+- CMake
+- Unit Test
+
+## License
 
 BSD
 
