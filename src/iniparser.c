@@ -1,80 +1,91 @@
 #include "iniparser.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>        // strcasecmp
-#include <assert.h>
+#include <strings.h> // strcasecmp
 
 #include "internal/ini.h"
 #include "internal/uthash.h"
 
-#define MAX_KEY_LEN   100   // max key length for hashtable
-#define MAX_VALUE_LEN 255   // max value length for hashtable
-#define T IniParser_T       // IniParser_S pointer (Parser class)
-#define KV KV_T             // KV_S pointer (key value structure for hashtable)
+#define STREQ( s1, s2 ) ( strcasecmp ( ( s1 ), ( s2 ) ) == 0 )
+#define ALLOC( n ) calloc ( 1, n )
+#define T IniParserPtr_T // IniParser_S pointer (Parser class)
+#define KV KVPtr_T       // KV_S pointer (key value structure for hashtable)
 
-// INI parser structure
-struct IniParser_S 
+enum                     // uname enum
 {
-    struct KV_S *hashtable;
-    int error;
+    max_key_len = 100,   // max key length for hashtable
+    max_value_len = 255  // max value length for hashtable
 };
 
-typedef struct KV_S* KV_T;
+// pointer to internal key value item struct
+typedef struct KV_S *KVPtr_T;
+
+// INI parser structure
+struct IniParser_S
+{
+    KVPtr_T hashtable; // hashtable root
+    int16_t status;    // ini_parse result
+};
 
 // internal key value item structure for hashtable
 struct KV_S
 {
-    char key[MAX_KEY_LEN];
-    char value[MAX_VALUE_LEN];
-    UT_hash_handle hh;  // makes this structure hashable
+    char key[max_key_len];
+    char value[max_value_len];
+    UT_hash_handle hh; // makes this structure hashable
 };
-
 
 // ======================================
 // private methods section
 // ======================================
 
-// make_key concat section and name string as hash key
-static void make_key(const char* const section, 
-                     const char* const name, 
-                     char* key_arr, 
-                     size_t key_arr_len)
+// concat_section_with_name concat section and name string as hash key
+static void concat_section_with_name (
+    const char *const section, const char *const name, char *key_arr,
+    size_t key_arr_len )
 {
-    snprintf(key_arr, key_arr_len, "%s@@%s", section, name);
+    // concat section and name with @@ symbol
+    snprintf ( key_arr, key_arr_len, "%s@@%s", section, name );
 }
 
 // hash_add insert key value to hash table
-static void hash_add(T P, const char* const key, 
-                          const char* const value)
+static void hash_add ( T P, const char *const key, const char *const value )
 {
-    KV s = NULL;
-    s = malloc(sizeof(struct KV_S));
-    strncpy(s->key, key, strlen(key));
-    strncpy(s->value, value, strlen(value));
-    HASH_ADD_STR(P->hashtable, key, s );
+    KV kv_ptr = NULL;
+    kv_ptr = (KV)ALLOC ( sizeof ( struct KV_S ) );
+    if ( kv_ptr )
+    {
+        strncpy ( kv_ptr->key, key, strlen ( key ) );
+        strncpy ( kv_ptr->value, value, strlen ( value ) );
+        HASH_ADD_STR ( P->hashtable, key, kv_ptr );
+    }
 }
 
-// hash_get get value from hashtable via key,
+// hash_get_value get value from hashtable via key,
 //  return char pointer is maintained by hashtable
-static char* hash_get(T P, const char* const key)
+static char *hash_get_value ( T P, const char *const key )
 {
-    KV s = NULL;
-    HASH_FIND_STR(P->hashtable, key, s);
-    return ( NULL != s ) ? s->value: "";
+    KV kv_ptr = NULL;
+    if ( P->hashtable )
+    {
+        HASH_FIND_STR ( P->hashtable, key, kv_ptr );
+        return ( NULL != kv_ptr ) ? kv_ptr->value : "";
+    }
+    return "";
 }
 
 // ini parser handler
-static int handler( void* user, 
-                    const char* section, 
-                    const char* name, 
-                    const char* value)
+static int my_ini_handler (
+    void *user, const char *section, const char *name, const char *value )
 {
+    assert ( user );
     T P = (T)user;
-    char key[MAX_KEY_LEN];
-    make_key(section, name, key, MAX_KEY_LEN);
-    hash_add(P, key, value);
+    char key[max_key_len];
+    concat_section_with_name ( section, name, key, max_key_len );
+    hash_add ( P, key, value );
     return 1;
 }
 
@@ -82,105 +93,108 @@ static int handler( void* user,
 // public methods section
 // ======================================
 
-T IniParser_Create(const char* const filename)
+T IniParser_Create ( const char *const ini_filename )
 {
     T P = NULL;
-    P = (T)malloc(sizeof(struct IniParser_S));
-    if (NULL == P)
+    // compact form:
+    //  if ( NULL == (P = (T)ALLOC ( sizeof ( struct IniParser_S ) ))) return NULL;
+    P = (T)ALLOC ( sizeof ( struct IniParser_S ) );
+    if ( NULL == P )
     {
         return NULL;
     }
     
-    P->hashtable = NULL;                        // init hash table
-    P->error = ini_parse(filename, handler, P); // load ini
+    // instantiate hash table to NULL, important!
+    P->hashtable = NULL;
+    P->status = ini_parse ( ini_filename, my_ini_handler, P );
     return P;
 }
 
-void IniParser_Destroy(T P)
+void IniParser_Destroy ( T P )
 {
-     assert(P);
-     HASH_CLEAR(hh, P->hashtable); // clear hashtable
-     
-     free(P->hashtable);
-     P->hashtable = NULL;
-     
-     free(P);
-     P = NULL;
+    assert ( P );
+    HASH_CLEAR ( hh, P->hashtable ); // empty hashtable
+
+    free ( P->hashtable );
+    P->hashtable = NULL;
+
+    free ( P );
+    P = NULL;
 }
 
-int IniParser_CheckError(T P)
+int16_t IniParser_CheckInstanceError ( T P )
 {
-    assert(P);
-    return P->error;
+    assert ( P );
+    return P->status;
 }
 
-const char* IniParser_Get(T P, const char* const section, 
-                               const char* const name, 
-                               const char* const default_value)
+const char *IniParser_GetString (
+    T P, const char *const section, const char *const name,
+    const char *const default_value )
 {
-    assert(P);
-    char key[MAX_KEY_LEN];
-    make_key(section, name, key, MAX_KEY_LEN);
-    char* v = hash_get(P, key);
-    return strlen(v) > 0 ? v : default_value;
+    assert ( P );
+    char key[max_key_len];
+    concat_section_with_name ( section, name, key, max_key_len );
+    char *val_str = hash_get_value ( P, key );
+    return strlen ( val_str ) > 0 ? val_str : default_value;
 }
 
-long IniParser_GetInteger(T P, const char* const section, 
-                               const char* const name, 
-                               const long default_value)
+int32_t IniParser_GetInteger (
+    T P, const char *const section, const char *const name,
+    const int32_t default_value )
 {
-    assert(P);
-    const char* val_str = IniParser_Get(P, section, name, "");
-    char* end;
-    long val_l = strtol(val_str, &end, 0);
-    return end > val_str ? val_l : default_value;
-
+    assert ( P );
+    const char *val_str = IniParser_GetString ( P, section, name, "" );
+    char *end;
+    int32_t val_long = strtol ( val_str, &end, 0 ); // base 0
+    return end > val_str ? val_long : default_value;
 }
 
-double IniParser_GetDouble(T P, const char* const section, 
-                                const char* const name, 
-                                const double default_value)
+double IniParser_GetDouble (
+    T P, const char *const section, const char *const name,
+    const double default_value )
 {
-    assert(P);
-    const char* val_str = IniParser_Get(P, section, name, "");
-    char* end;
-    double val_d = strtod(val_str, &end);
-    return end > val_str ? val_d : default_value;
+    assert ( P );
+    const char *val_str = IniParser_GetString ( P, section, name, "" );
+    char *end;
+    double val_double = strtod ( val_str, &end );
+    return end > val_str ? val_double : default_value;
 }
-
 
 // bool pais structure
-typedef struct pair_s 
+typedef struct pair_s
 {
-    const char *value;
-    bool val_b;
+    const char *val_str;
+    bool val_bool;
 } pair_t;
 
 // table-driven string comparison
-static pair_t content_types[] = {
+static const pair_t bool_types_tbl[] = 
+{
     // true conditions
-    { "true" , true  },
-    { "yes"  , true  },
-    { "on"   , true  },
-    { "1"    , true  },
+    { "true",  true  },
+    { "yes",   true  },
+    { "on",    true  },
+    { "1",     true  },
     // false conditions
     { "false", false },
-    { "no"   , false },
-    { "off"  , false },
-    { "0"    , false },
+    { "no",    false },
+    { "off",   false },
+    { "0",     false },
     // terminator
-    { ""     , false }, // terminator
+    { "",      false },
 };
 
-bool IniParser_GetBoolean(T P, const char* const section, 
-                               const char* const name, 
-                               const bool default_value)
+bool IniParser_GetBoolean (
+    T P, const char *const section, const char *const name,
+    const bool default_value )
 {
-    assert(P);
-    const char* val_str = IniParser_Get(P, section, name, "");
-    for (int i = 0; *content_types[i].value != '\0'; i++) {
-        if (strcasecmp(val_str, content_types[i].value) == 0)
-            return content_types[i].val_b;
+    assert ( P );
+    const char *val_str = IniParser_GetString ( P, section, name, "" );
+    for ( int i = 0; *bool_types_tbl[i].val_str != '\0'; i++ )
+    {
+        if ( STREQ ( val_str, bool_types_tbl[i].val_str ) )
+            return bool_types_tbl[i].val_bool;
     }
     return default_value;
 }

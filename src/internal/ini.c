@@ -187,12 +187,12 @@ int ini_parse_file(FILE* file, ini_handler handler, void* user)
 }
 
 /* See documentation in header file. */
-int ini_parse(const char* filename, ini_handler handler, void* user)
+int ini_parse(const char* ini_filename, ini_handler handler, void* user)
 {
     FILE* file;
     int error;
 
-    file = fopen(filename, "r");
+    file = fopen(ini_filename, "r");
     if (!file)
         return -1;
     error = ini_parse_file(file, handler, user);

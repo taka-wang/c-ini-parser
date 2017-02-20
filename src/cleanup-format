@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# style options 
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
+# cmd: ./cleanup-format -i *.{c,h}
+clang-format -style="{  BasedOnStyle: llvm, 
+                        IndentWidth: 4, 
+                        AllowShortFunctionsOnASingleLine: None, 
+                        AlignTrailingComments: true, 
+                        SpaceInEmptyParentheses: true, 
+                        SpaceBeforeParens: Always, 
+                        SpacesInParentheses: true,
+                        BreakBeforeBraces: Allman, 
+                        AlignAfterOpenBracket: AlwaysBreak,
+                        KeepEmptyLinesAtTheStartOfBlocks: false}" "$@"
